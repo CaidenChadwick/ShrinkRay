@@ -24,8 +24,8 @@ app.use(
 
 app.use(express.json());
 
-app.post('api/users', registerUser);
-app.post('api/login', logIn);
+app.post('/api/users', registerUser);
+app.post('/api/login', logIn);
 
 app.listen(PORT, () => {
   console.log(`Listening at http://localhost:${PORT}`);
