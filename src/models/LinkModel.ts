@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { AppDataSource } from '../dataSource';
 import { Link } from '../entities/Link';
+import { User } from '../entities/User';
 
 const linkRepository = AppDataSource.getRepository(Link);
 
@@ -24,4 +25,72 @@ function createLinkId(originalUrl: string, userId: string): string {
   return linkId;
 }
 
-export { getLinkById, createLinkId };
+async function createNewLink(originalUrl: string, linkId: string, creator: User): Promise<Link> {
+  let newLink = new Link();
+  newLink.linkId = linkId;
+  newLink.originalUrl = originalUrl;
+  newLink.user = creator;
+
+  const now = new Date();
+  newLink.lastAccessedOn = now;
+
+  newLink = await linkRepository.save(newLink);
+  return newLink;
+}
+
+async function updateLinkVisits(link: Link): Promise<Link> {
+  const updatedLink = link;
+  updatedLink.numHits += 1;
+
+  const now = new Date();
+  updatedLink.lastAccessedOn = now;
+
+  await linkRepository
+    .createQueryBuilder()
+    .update(Link)
+    .set({ numHits: updatedLink.numHits, lastAccessedOn: updatedLink.lastAccessedOn })
+    .where({ linkId: updatedLink.linkId })
+    .execute();
+
+  return link;
+}
+
+async function getLinksByUserId(userId: string): Promise<Link[]> {
+  const links = await linkRepository
+    .createQueryBuilder('link')
+    .where({ user: { userId } }) // NOTES: This is how you do nested WHERE clauses
+    .leftJoin('user.links', 'links')
+    .select(['link.linkId', 'link.originalUrl', 'user.userId', 'user.username', 'user.isAdmin'])
+    .getMany();
+
+  return links;
+}
+
+async function getLinksByUserIdForOwnAccount(userId: string): Promise<Link[]> {
+  const links = await linkRepository
+    .createQueryBuilder('link')
+    .where({ user: { userId } })
+    .leftJoin('user.links', 'links')
+    .select([
+      'link.linkId',
+      'link.originalUrl',
+      'link.numHits',
+      'link.lastAccessedOn',
+      'user.userId',
+      'user.username',
+      'user.isPro',
+      'user.isAdmin',
+    ])
+    .getMany();
+
+  return links;
+}
+
+export {
+  getLinkById,
+  createLinkId,
+  createNewLink,
+  updateLinkVisits,
+  getLinksByUserId,
+  getLinksByUserIdForOwnAccount,
+};
