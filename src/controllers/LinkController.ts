@@ -113,6 +113,7 @@ async function deleteLink(req: Request, res: Response): Promise<void> {
     return;
   }
 
+  res.sendStatus(200);
   await deleteLinkById(targetLinkId);
 }
 
