@@ -6,6 +6,7 @@ import {
   updateLinkVisits,
   getLinksByUserId,
   getLinksByUserIdForOwnAccount,
+  deleteLinkById,
 } from '../models/LinkModel';
 import { getUserById } from '../models/UserModel';
 import { parseDatabaseError } from '../utils/db-utils';
@@ -68,7 +69,7 @@ async function getOriginalUrl(req: Request, res: Response): Promise<void> {
   res.redirect(301, link.originalUrl);
 }
 
-async function getUserLinks(res: Response, req: Request): Promise<void> {
+async function getUserLinks(req: Request, res: Response): Promise<void> {
   const { targetUserId } = req.params as UserIdParam;
   const targetUser = await getUserById(targetUserId);
   if (!targetUser) {
@@ -86,4 +87,33 @@ async function getUserLinks(res: Response, req: Request): Promise<void> {
   }
 }
 
-export { shortenUrl, getOriginalUrl, getUserLinks };
+async function deleteLink(req: Request, res: Response): Promise<void> {
+  const { targetUserId } = req.params as UserIdParam;
+  const targetUser = await getUserById(targetUserId);
+  if (!targetUser) {
+    res.sendStatus(404); // 404 Not Found
+    return;
+  }
+
+  const user = req.session.authenticatedUser;
+  if (!req.session.isLoggedIn) {
+    res.sendStatus(401); // 401 Unauthorized
+    return;
+  }
+
+  if (!(user.isAdmin || user.userId === targetUserId)) {
+    res.sendStatus(403);
+    return;
+  }
+
+  const { targetLinkId } = req.params as LinkIdParam;
+  const link = getLinkById(targetLinkId);
+  if (!link) {
+    res.sendStatus(404); // 404 Not Found
+    return;
+  }
+
+  await deleteLinkById(targetLinkId);
+}
+
+export { shortenUrl, getOriginalUrl, getUserLinks, deleteLink };
