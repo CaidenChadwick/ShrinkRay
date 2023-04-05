@@ -1,11 +1,12 @@
-import './config';
-import 'express-async-errors';
+import './config'; // Load environment variables
+import 'express-async-errors'; // Enable default error handling for async errors
+
 import express, { Express } from 'express';
+
 import session from 'express-session';
 import connectSqlite3 from 'connect-sqlite3';
-
 import { registerUser, logIn } from './controllers/UserController';
-import { shortenUrl, getOriginalUrl, getUserLinks, deleteLink } from './controllers/LinkController';
+import { shortenUrl, visitLink, getLinks, removeLink } from './controllers/LinkController';
 
 const app: Express = express();
 const { PORT, COOKIE_SECRET } = process.env;
@@ -25,14 +26,13 @@ app.use(
 
 app.use(express.json());
 
-app.post('/api/users', registerUser);
-app.post('/api/login', logIn);
+app.post('/api/users', registerUser); // Create an account
+app.post('/api/login', logIn); // Log in to an account
 
 app.post('/api/links', shortenUrl);
-app.get('/:targetLinkId', getOriginalUrl);
-app.get('/api/users/:targetUserId/links', getUserLinks);
-
-app.delete('/api/users/:targetUserId/links/:targetLinkId', deleteLink);
+app.get('/:targetLinkId', visitLink);
+app.get('/api/users/:targetUserId/links', getLinks);
+app.delete('/api/users/:targetUserId/links/:targetLinkId', removeLink);
 
 app.listen(PORT, () => {
   console.log(`Listening at http://localhost:${PORT}`);
