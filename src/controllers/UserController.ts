@@ -29,7 +29,7 @@ async function logIn(req: Request, res: Response): Promise<void> {
 
   const user = await getUserByUsername(username);
   if (!user) {
-    res.sendStatus(404); // 404 Not Found - email doesn't exist
+    res.sendStatus(404);
     return;
   }
 
